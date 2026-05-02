@@ -1,3 +1,6 @@
-const hello = @import("test.zig");
+const std = @import("std");
+const zarg = @import("parser/mod.zig");
 
-pub const Hello = hello.Hello;
+test {
+    std.testing.refAllDecls(@This());
+}

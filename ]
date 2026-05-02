@@ -1,0 +1,23 @@
+const std = @import("std");
+const utils = @import("parse_utils.zig");
+const Allocator = std.mem.Allocator;
+
+pub fn parseArgs(
+    comptime T: type,
+    allocator: Allocator,
+) !T {
+    comptime {
+        const ti = @typeInfo(T);
+
+        if (ti != .@"struct") @compileError("Passed type is not a struct");
+
+        const flag_field = utils.findField("flags", ti.@"struct".fields);
+        const arg_field = utils.findField("arguments", ti.@"struct".fields);
+
+        const ff_ti = @typeInfo(flag_field);
+        const af_ti = @typeInfo(arg_field);
+
+        if (ff_ti != .@"struct") @compileError("Flag field must be a struct");
+        if (af_ti != .@"struct") @compileError("Argument field must be a struct")
+    }
+}
