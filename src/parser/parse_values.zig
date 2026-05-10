@@ -6,26 +6,22 @@ pub fn parseValues(
     value: []const u8,
 ) !T {
     const ti = comptime @typeInfo(T);
+    if (ti == .bool) return true;
+
+    if (std.mem.startsWith(u8, value, "--") or std.mem.startsWith(u8, value, "-")) return error.NoValue;
+
     const return_value = switch (ti) {
+        .optional => |o| try parseValues(o.child, value),
         .bool => true,
-        .int => |i| blk: {
-            const num = if (i.signedness == .signed) try std.fmt.parseInt(T, value, 10) else try std.fmt.parseUnsigned(T, value, 10);
-            break :blk num;
-        },
-        .float => blk: {
-            const num = try std.fmt.parseFloat(T, value);
-            break :blk num;
-        },
+        .int => |i| if (i.signedness == .signed) try std.fmt.parseInt(T, value, 10) else try std.fmt.parseUnsigned(T, value, 10),
+        .float => try std.fmt.parseFloat(T, value),
         .pointer => |p| blk: {
             if (p.size != .slice) @compileError("Pointer is not a slice");
             const c = comptime @typeInfo(p.child);
             if (c != .int and c.int.signedness != .unsigned) @compileError("Not a unsigned integer");
             break :blk value;
         },
-        else => {
-            const err_msg = std.fmt.comptimePrint("Passed type is not currently handled: {any}", .{ti});
-            @compileError(err_msg);
-        },
+        else => @compileError("Passed type is not currently handled: " ++ ti),
     };
     return return_value;
 }
